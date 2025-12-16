@@ -1,7 +1,7 @@
 const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require("@whiskeysockets/baileys");
 const P = require("pino");
 const qrcode = require("qrcode-terminal");
-// Test Webhooks
+// Test Webhooks dulu deh 
 const COMMAND = ".list";
 const RESPONSE = `*[RESELLER PRICE]*
 
