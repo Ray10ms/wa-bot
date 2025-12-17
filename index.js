@@ -20,26 +20,28 @@ const QRIS_PATH = path.join(__dirname, "assets/qris.png");
 const PRODUCT_DETAILS = require("./products");
 
 // ================== RESPONSES ==================
-const LIST_RESPONSE = `🛍️ *CATALOGUE ${STORE_NAME.toUpperCase()}* 🛍️
-━━━━━━━━━━━━━━━━━━
+const LIST_RESPONSE = `🛍️ *CATALOGUE EMRAY STORE*
+━━━━━━━━━━━━━━━━━━━━━━
 
-1️. Netflix
-2️. YouTube Premium
-3️. Disney+
-4️. Loklok
-5️. Vidio
-6️. Spotify
-7️. ChatGPT
-8️. Gemini AI
-9️. Canva
+\`\`\`
+1.  Netflix
+2.  YouTube Premium
+3.  Disney+
+4.  Loklok
+5.  Vidio
+6.  Spotify
+7.  ChatGPT
+8.  Gemini AI
+9.  Canva
 10. CapCut
-1️1. Suntik Followers IG
-1️2. Suntik Followers TikTok
+11. Suntik Followers IG
+12. Suntik Followers TikTok
 13. Likes IG
-1️4. Likes TikTok
-1️5. Views TikTok
+14. Likes TikTok
+15. Views TikTok
+\`\`\`
 
-━━━━━━━━━━━━━━━━━━
+━━━━━━━━━━━━━━━━━━━━━━
 🔎 *Lihat Detail Produk*
 Ketik: \`.<nama produk>\`
 
