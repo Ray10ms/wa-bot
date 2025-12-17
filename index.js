@@ -12,44 +12,41 @@ const path = require("path");
 const PREFIX = ".";
 const STORE_NAME = "Emray Store";
 
-const ADMIN_NUMBERS = [
-  "6287867326510",
-  "628997802027",
-];
+const ADMIN_NUMBERS = ["6287867326510", "628997802027"];
 
 const QRIS_PATH = path.join(__dirname, "assets/qris.png");
 
-// Detail produk (capcut/spotify/disney) ada di products.js
+// Produk (dipisah file)
 const PRODUCT_DETAILS = require("./products");
 
 // ================== RESPONSES ==================
 const LIST_RESPONSE = `🛍️ *CATALOGUE ${STORE_NAME.toUpperCase()}* 🛍️
 ━━━━━━━━━━━━━━━━━━
 
-1️⃣ Netflix
-2️⃣ YouTube Premium
-3️⃣ Disney+
-4️⃣ Loklok
-5️⃣ Vidio
-6️⃣ Spotify
-7️⃣ ChatGPT
-8️⃣ Gemini AI
-9️⃣ Canva
-🔟 CapCut
-1️⃣1️⃣ Suntik Followers IG
-1️⃣2️⃣ Suntik Followers TikTok
-1️⃣3️⃣ Likes IG
-1️⃣4️⃣ Likes TikTok
-1️⃣5️⃣ Views TikTok
+1️. Netflix
+2️. YouTube Premium
+3️. Disney+
+4️. Loklok
+5️. Vidio
+6️. Spotify
+7️. ChatGPT
+8️. Gemini AI
+9️. Canva
+10. CapCut
+1️1. Suntik Followers IG
+1️2. Suntik Followers TikTok
+13. Likes IG
+1️4. Likes TikTok
+1️5. Views TikTok
 
 ━━━━━━━━━━━━━━━━━━
 🔎 *Lihat Detail Produk*
 Ketik: \`.<nama produk>\`
 
 📌 Contoh:
-\`.Netflix\`
+\`.capcut\`
 
-✨ Happy shopping di *${STORE_NAME}* 💖`;
+✨ Happy shopping di *${STORE_NAME}* `;
 
 const PAY_CAPTION = `📌 *UPDATE LIST PAYMENT* 💳
 📸 *WAJIB KIRIM BUKTI TRANSAKSI KE GRUP YA, KAK!*
@@ -62,7 +59,7 @@ const PAY_CAPTION = `📌 *UPDATE LIST PAYMENT* 💳
 • Kelebihan nominal otomatis jadi *deposit* (no refund)
 
 Dengan melakukan pembelian,
-berarti kamu *setuju dengan syarat di atas* 🫶
+berarti kamu *setuju dengan syarat di atas* 
 
 ✨ Terima kasih sudah belanja di *${STORE_NAME}*!`;
 
@@ -80,7 +77,7 @@ async function isGroupAdmin(sock, groupJid, userJid) {
   try {
     const md = await sock.groupMetadata(groupJid);
     const p = md.participants.find((x) => x.id === userJid);
-    return !!p?.admin; // "admin"/"superadmin"/undefined
+    return !!p?.admin;
   } catch {
     return false;
   }
@@ -90,23 +87,23 @@ async function isAllowedAdmin(sock, m) {
   const senderJid = m.key.participant || m.key.remoteJid;
   const senderNum = normalize(senderJid);
 
-  // whitelist nomor admin selalu boleh
+  // whitelist admin
   if (ADMIN_NUMBERS.includes(senderNum)) return true;
 
-  // kalau di grup, admin grup boleh juga
+  // admin grup juga boleh
   if (m.key.remoteJid.endsWith("@g.us")) {
     return await isGroupAdmin(sock, m.key.remoteJid, senderJid);
   }
-
-  // private chat: hanya whitelist
   return false;
 }
 
-function getQuotedText(m) {
-  const ctx = m.message?.extendedTextMessage?.contextInfo;
+function getReplyContext(m) {
+  return m.message?.extendedTextMessage?.contextInfo || null;
+}
+
+function getQuotedTextFromContext(ctx) {
   const q = ctx?.quotedMessage;
   if (!q) return null;
-
   return (
     q.conversation ||
     q.extendedTextMessage?.text ||
@@ -157,12 +154,8 @@ async function startBot() {
       const shouldReconnect = statusCode !== DisconnectReason.loggedOut;
 
       console.log("❌ Koneksi terputus.", statusCode ? `Status: ${statusCode}` : "");
-      if (shouldReconnect) {
-        console.log("🔄 Reconnect...");
-        startBot();
-      } else {
-        console.log("⚠️ Logged out. Hapus folder 'auth' lalu jalankan lagi untuk scan QR.");
-      }
+      if (shouldReconnect) startBot();
+      else console.log("⚠️ Logged out. Hapus folder 'auth' lalu scan ulang.");
     }
 
     if (connection === "open") {
@@ -189,7 +182,10 @@ Jika ingin order, silakan chat admin ya 🙏
 
 Happy shopping & semoga betah 💖`;
 
-      await sock.sendMessage(groupJid, { text: welcomeText, mentions: [userJid] });
+      await sock.sendMessage(groupJid, {
+        text: welcomeText,
+        mentions: [userJid],
+      });
     } catch (err) {
       console.error("Welcome error:", err);
     }
@@ -198,20 +194,19 @@ Happy shopping & semoga betah 💖`;
   // ===== COMMANDS =====
   sock.ev.on("messages.upsert", async ({ messages }) => {
     const m = messages?.[0];
-    if (!m?.message) return;
-    if (m.key.fromMe) return;
+    if (!m?.message || m.key.fromMe) return;
 
     const text = getText(m).trim();
     if (!text.startsWith(PREFIX)) return;
 
-    const cmd = text.split(/\s+/)[0].toLowerCase(); // ".list", ".pay", ".done", ".capcut"
+    const cmd = text.split(/\s+/)[0].toLowerCase();
 
     // .list (public)
     if (cmd === ".list") {
       return sock.sendMessage(m.key.remoteJid, { text: LIST_RESPONSE }, { quoted: m });
     }
 
-    // detail produk dari products.js (public)
+    // detail produk (public)
     if (PRODUCT_DETAILS[cmd]) {
       return sock.sendMessage(
         m.key.remoteJid,
@@ -242,25 +237,27 @@ Happy shopping & semoga betah 💖`;
       );
     }
 
-    // .done (admin-only, reply wajib)
+    // .done (admin-only, reply wajib) => mention CUSTOMER yg direply
     if (cmd === ".done") {
       const ok = await isAllowedAdmin(sock, m);
       if (!ok) {
         return sock.sendMessage(m.key.remoteJid, { text: "❌ Command khusus admin." }, { quoted: m });
       }
 
-      const note = getQuotedText(m);
-      if (!note) {
+      const ctx = getReplyContext(m);
+      const note = getQuotedTextFromContext(ctx);
+      const customerJid = ctx?.participant; // <- pengirim pesan yg direply
+
+      if (!ctx || !note || !customerJid) {
         return sock.sendMessage(
           m.key.remoteJid,
-          { text: "⚠️ Cara pakai: reply pesan transaksi lalu ketik *.Done*" },
+          { text: "⚠️ Cara pakai: reply pesan customer lalu ketik *.done*" },
           { quoted: m }
         );
       }
 
       const now = new Date();
       const trxId = genTrxId();
-      const adminJid = m.key.participant || m.key.remoteJid;
 
       const out = `[ TRANSAKSI SELESAI ]
 
@@ -271,13 +268,13 @@ Happy shopping & semoga betah 💖`;
 
 📝 Catatan : ${note}
 
-@${normalize(adminJid)} Pesanan sudah selesai!
+@${normalize(customerJid)} Pesanan sudah selesai!
 (づ｡◕‿‿◕｡)づ 🎉✨
-Terima kasih sudah belanja di ${STORE_NAME} 🛍️🌸`;
+Terima kasih sudah belanja di ${STORE_NAME} 🛍️`;
 
       return sock.sendMessage(
         m.key.remoteJid,
-        { text: out, mentions: [adminJid] },
+        { text: out, mentions: [customerJid] },
         { quoted: m }
       );
     }
