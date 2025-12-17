@@ -1,81 +1,139 @@
-const { default: makeWASocket, useMultiFileAuthState, DisconnectReason } = require("@whiskeysockets/baileys");
+const {
+  default: makeWASocket,
+  useMultiFileAuthState,
+  DisconnectReason,
+} = require("@whiskeysockets/baileys");
 const P = require("pino");
 const qrcode = require("qrcode-terminal");
-// Test Webhooks dulu deh 
-const COMMAND = ".list";
-const RESPONSE = `*[RESELLER PRICE]*
+const fs = require("fs");
+const path = require("path");
 
-━━━━━━━━━━━━━━
-*NETFLIX*
-*Sharing 1P1U*
-• 1 Day : 5.000
-• 3 Days : 9.000
-• 7 Days : 12.000
-• 1 Month : 28.500
+// ================== CONFIG ==================
+const PREFIX = ".";
+const STORE_NAME = "Emray Store";
 
-*Sharing 1P2U*
-• 1 Day : 6.000
-• 3 Days : 9.000
-• 7 Days : 14.000
-• 1 Month : 19.000
+const ADMIN_NUMBERS = [
+  "6287867326510",
+  "628997802027",
+];
 
-*Semi Private*
-• 1 Month : 35.000
+const QRIS_PATH = path.join(__dirname, "assets/qris.png");
 
-*Private*
-• 7 Days : 35.000
-• 1 Month : 125.000
+// Detail produk (capcut/spotify/disney) ada di products.js
+const PRODUCT_DETAILS = require("./products");
 
-━━━━━━━━━━━━━━
-*VIU*
-*Private*
-• 1 Month : 10.000
-• 3 Month : 30.000
-• 1 Year : 55.000
-• 200 Year : 150.000
+// ================== RESPONSES ==================
+const LIST_RESPONSE = `🛍️ *CATALOGUE ${STORE_NAME.toUpperCase()}* 🛍️
+━━━━━━━━━━━━━━━━━━
 
-━━━━━━━━━━━━━━
-*DISNEY+*
-• 1 Hari : 3.500
-• 3 Hari : 7.000
-• 5 Hari : 11.000
-• 7 Hari : 12.500
-• 1 Bulan : 25.000
+1️⃣ Netflix
+2️⃣ YouTube Premium
+3️⃣ Disney+
+4️⃣ Loklok
+5️⃣ Vidio
+6️⃣ Spotify
+7️⃣ ChatGPT
+8️⃣ Gemini AI
+9️⃣ Canva
+🔟 CapCut
+1️⃣1️⃣ Suntik Followers IG
+1️⃣2️⃣ Suntik Followers TikTok
+1️⃣3️⃣ Likes IG
+1️⃣4️⃣ Likes TikTok
+1️⃣5️⃣ Views TikTok
 
-━━━━━━━━━━━━━━
-*SPOTIFY*
-*Individual Plan*
-• 1 Month : 18.000
-• 2 Month : 30.000
-• 3 Month : 35.000
+━━━━━━━━━━━━━━━━━━
+🔎 *Lihat Detail Produk*
+Ketik: \`.<nama produk>\`
 
-*Family Plan*
-• 1 Month : 19.000
-• 2 Month : 30.000
+📌 Contoh:
+\`.Netflix\`
 
-━━━━━━━━━━━━━━
-*CAPCUT*
-*Sharing*
-• 1 Day : 2.000
-• 7 Days : 5.500
-• 1 Month : 10.000
+✨ Happy shopping di *${STORE_NAME}* 💖`;
 
-*Private*
-• 7 Days : 9.000
-• 14 Days : 10.000
-• 21 Days : 11.500
-• 28 Days : 16.000
-• 1 Month : 19.000
+const PAY_CAPTION = `📌 *UPDATE LIST PAYMENT* 💳
+📸 *WAJIB KIRIM BUKTI TRANSAKSI KE GRUP YA, KAK!*
 
-━━━━━━━━━━━━━━
-*CANVA*
-*Member*
-• 1 Day : 700
-• 7 Days : 2.500
-• 1 Month : 10.000
-• 6 Month : 25.000
-• 1 Year : 30.000`;
+🇮🇩 *Ketentuan Pembayaran:*
+• Pembayaran via *QRIS* (semua transaksi)
+• Wajib kirim *bukti transfer + caption pesanan*
+• Dilarang *memalsukan bukti transaksi*
+• Salah nominal *tidak bisa refund*
+• Kelebihan nominal otomatis jadi *deposit* (no refund)
 
+Dengan melakukan pembelian,
+berarti kamu *setuju dengan syarat di atas* 🫶
+
+✨ Terima kasih sudah belanja di *${STORE_NAME}*!`;
+
+// ================== HELPERS ==================
+const normalize = (jid) => (jid || "").split("@")[0];
+
+const getText = (m) =>
+  m.message?.conversation ||
+  m.message?.extendedTextMessage?.text ||
+  m.message?.imageMessage?.caption ||
+  m.message?.videoMessage?.caption ||
+  "";
+
+async function isGroupAdmin(sock, groupJid, userJid) {
+  try {
+    const md = await sock.groupMetadata(groupJid);
+    const p = md.participants.find((x) => x.id === userJid);
+    return !!p?.admin; // "admin"/"superadmin"/undefined
+  } catch {
+    return false;
+  }
+}
+
+async function isAllowedAdmin(sock, m) {
+  const senderJid = m.key.participant || m.key.remoteJid;
+  const senderNum = normalize(senderJid);
+
+  // whitelist nomor admin selalu boleh
+  if (ADMIN_NUMBERS.includes(senderNum)) return true;
+
+  // kalau di grup, admin grup boleh juga
+  if (m.key.remoteJid.endsWith("@g.us")) {
+    return await isGroupAdmin(sock, m.key.remoteJid, senderJid);
+  }
+
+  // private chat: hanya whitelist
+  return false;
+}
+
+function getQuotedText(m) {
+  const ctx = m.message?.extendedTextMessage?.contextInfo;
+  const q = ctx?.quotedMessage;
+  if (!q) return null;
+
+  return (
+    q.conversation ||
+    q.extendedTextMessage?.text ||
+    q.imageMessage?.caption ||
+    q.videoMessage?.caption ||
+    null
+  );
+}
+
+function genTrxId() {
+  const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+  let r = "";
+  for (let i = 0; i < 8; i++) r += chars[Math.floor(Math.random() * chars.length)];
+  return `TRX-${r}`;
+}
+
+const pad = (n) => String(n).padStart(2, "0");
+
+function formatTanggal(d) {
+  const bln = [
+    "Januari","Februari","Maret","April","Mei","Juni",
+    "Juli","Agustus","September","Oktober","November","Desember"
+  ];
+  return `${d.getDate()} ${bln[d.getMonth()]} ${d.getFullYear()}`;
+}
+
+// ================== BOT ==================
 async function startBot() {
   const { state, saveCreds } = await useMultiFileAuthState("auth");
 
@@ -84,10 +142,8 @@ async function startBot() {
     logger: P({ level: "silent" }),
   });
 
-  // Simpan session/login
   sock.ev.on("creds.update", saveCreds);
 
-  // Tampilkan QR di terminal
   sock.ev.on("connection.update", (update) => {
     const { connection, qr, lastDisconnect } = update;
 
@@ -105,35 +161,124 @@ async function startBot() {
         console.log("🔄 Reconnect...");
         startBot();
       } else {
-        console.log("⚠️ Kamu logout. Hapus folder 'auth' lalu jalankan lagi untuk scan QR ulang.");
+        console.log("⚠️ Logged out. Hapus folder 'auth' lalu jalankan lagi untuk scan QR.");
       }
     }
 
     if (connection === "open") {
-      console.log("✅ Bot online & siap dipakai!");
-      console.log(`➡️ Coba ketik ${COMMAND} di chat/grup.`);
+      console.log(`✅ Bot ${STORE_NAME} online!`);
     }
   });
 
-  // Handler pesan masuk
+  // ===== AUTO WELCOME =====
+  sock.ev.on("group-participants.update", async (update) => {
+    try {
+      if (update.action !== "add") return;
+
+      const groupJid = update.id;
+      const userJid = update.participants?.[0];
+      if (!userJid) return;
+
+      const welcomeText = `👋 Selamat datang @${normalize(userJid)}!
+
+Terima kasih sudah bergabung di
+🛍️ *${STORE_NAME}* ✨
+
+📦 Cek daftar produk dengan *.list*
+Jika ingin order, silakan chat admin ya 🙏
+
+Happy shopping & semoga betah 💖`;
+
+      await sock.sendMessage(groupJid, { text: welcomeText, mentions: [userJid] });
+    } catch (err) {
+      console.error("Welcome error:", err);
+    }
+  });
+
+  // ===== COMMANDS =====
   sock.ev.on("messages.upsert", async ({ messages }) => {
-    const msg = messages?.[0];
-    if (!msg?.message) return;
-    if (msg.key.fromMe) return;
+    const m = messages?.[0];
+    if (!m?.message) return;
+    if (m.key.fromMe) return;
 
-    const text =
-      msg.message.conversation ||
-      msg.message.extendedTextMessage?.text ||
-      "";
+    const text = getText(m).trim();
+    if (!text.startsWith(PREFIX)) return;
 
-    const incoming = text.trim().toLowerCase();
+    const cmd = text.split(/\s+/)[0].toLowerCase(); // ".list", ".pay", ".done", ".capcut"
 
-    // cocokkan command
-    if (incoming === COMMAND.toLowerCase()) {
-      await sock.sendMessage(
-        msg.key.remoteJid,
-        { text: RESPONSE },
-        { quoted: msg }
+    // .list (public)
+    if (cmd === ".list") {
+      return sock.sendMessage(m.key.remoteJid, { text: LIST_RESPONSE }, { quoted: m });
+    }
+
+    // detail produk dari products.js (public)
+    if (PRODUCT_DETAILS[cmd]) {
+      return sock.sendMessage(
+        m.key.remoteJid,
+        { text: PRODUCT_DETAILS[cmd] },
+        { quoted: m }
+      );
+    }
+
+    // .pay (admin-only)
+    if (cmd === ".pay") {
+      const ok = await isAllowedAdmin(sock, m);
+      if (!ok) {
+        return sock.sendMessage(m.key.remoteJid, { text: "❌ Command khusus admin." }, { quoted: m });
+      }
+
+      if (!fs.existsSync(QRIS_PATH)) {
+        return sock.sendMessage(
+          m.key.remoteJid,
+          { text: "⚠️ File QRIS tidak ditemukan. Pastikan ada di: ./assets/qris.png" },
+          { quoted: m }
+        );
+      }
+
+      return sock.sendMessage(
+        m.key.remoteJid,
+        { image: fs.readFileSync(QRIS_PATH), caption: PAY_CAPTION },
+        { quoted: m }
+      );
+    }
+
+    // .done (admin-only, reply wajib)
+    if (cmd === ".done") {
+      const ok = await isAllowedAdmin(sock, m);
+      if (!ok) {
+        return sock.sendMessage(m.key.remoteJid, { text: "❌ Command khusus admin." }, { quoted: m });
+      }
+
+      const note = getQuotedText(m);
+      if (!note) {
+        return sock.sendMessage(
+          m.key.remoteJid,
+          { text: "⚠️ Cara pakai: reply pesan transaksi lalu ketik *.Done*" },
+          { quoted: m }
+        );
+      }
+
+      const now = new Date();
+      const trxId = genTrxId();
+      const adminJid = m.key.participant || m.key.remoteJid;
+
+      const out = `[ TRANSAKSI SELESAI ]
+
+🆔 ID : ${trxId}
+📅 TANGGAL : ${formatTanggal(now)}
+⌚ JAM : ${pad(now.getHours())}:${pad(now.getMinutes())}:${pad(now.getSeconds())}
+✨ STATUS : Berhasil
+
+📝 Catatan : ${note}
+
+@${normalize(adminJid)} Pesanan sudah selesai!
+(づ｡◕‿‿◕｡)づ 🎉✨
+Terima kasih sudah belanja di ${STORE_NAME} 🛍️🌸`;
+
+      return sock.sendMessage(
+        m.key.remoteJid,
+        { text: out, mentions: [adminJid] },
+        { quoted: m }
       );
     }
   });
