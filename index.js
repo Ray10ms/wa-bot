@@ -64,12 +64,15 @@ berarti kamu *setuju dengan syarat di atas*
 
 // === BARU (untuk .open / .close) ===
 const OPEN_TEXT = `✅ *TOKO DIBUKA* 🟢
-Silakan order ya kak 🙌
-Admin standby 💬`;
+
+Silakan order ya 🙌
+Admin siap tampil kembali`;
 
 const CLOSE_TEXT = `⛔ *TOKO DITUTUP* 🔴
+
 Toko sedang tutup sementara 🙏
-Silakan order saat jam operasional`;
+Silakan order saat jam operasional
+Terima Kasih untuk orderan hari ini🙏`;
 
 // ================== HELPERS ==================
 const normalize = (jid) => (jid || "").split("@")[0];
