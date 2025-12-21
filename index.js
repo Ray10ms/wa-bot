@@ -34,11 +34,8 @@ const LIST_RESPONSE = `🛍️ *CATALOGUE EMRAY STORE*
 8.  Gemini AI
 9.  Canva
 10. CapCut
-11. Suntik Followers IG
-12. Suntik Followers TikTok
-13. Likes IG
-14. Likes TikTok
-15. Views TikTok
+11. Instagram
+12. TikTok
 \`\`\`
 
 ━━━━━━━━━━━━━━━━━━━━━━
@@ -74,6 +71,22 @@ const getText = (m) =>
   m.message?.imageMessage?.caption ||
   m.message?.videoMessage?.caption ||
   "";
+
+// === BARU: auto-bold judul (baris pertama) untuk output detail produk ===
+function boldTitle(text) {
+  if (!text) return text;
+
+  const t = String(text).replace(/\r\n/g, "\n").trim();
+  const lines = t.split("\n");
+  const title = (lines[0] || "").trim();
+  if (!title) return t;
+
+  // kalau judul sudah ada bold manual (pakai *...*), biarkan
+  if (title.startsWith("*") && title.endsWith("*")) return t;
+
+  lines[0] = `*${title}*`;
+  return lines.join("\n");
+}
 
 async function isGroupAdmin(sock, groupJid, userJid) {
   try {
@@ -210,9 +223,11 @@ Happy shopping & semoga betah 💖`;
 
     // detail produk (public)
     if (PRODUCT_DETAILS[cmd]) {
+      const raw = PRODUCT_DETAILS[cmd];
+      const formatted = boldTitle(raw); // <-- BARU: auto-bold judul
       return sock.sendMessage(
         m.key.remoteJid,
-        { text: PRODUCT_DETAILS[cmd] },
+        { text: formatted },
         { quoted: m }
       );
     }
