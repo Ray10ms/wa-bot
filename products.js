@@ -1,63 +1,4 @@
 module.exports = {
-  // ====== PRODUK LAMA (TETAP ADA) ======
-  ".capcut": `✂️ *CAPCUT PRO — FULL GARANSI* (Private)
-
-*Private*
-• 30 Hari — *Rp13.000*
-• 35 Hari — *Rp17.000*
-
-📌 *S&K PRODUK*
-> • Periode akun 1 bulan dihitung antara 25–30 hari dan sudah termasuk 1 bulan penuh
-> • Support All Device (Android, iOS, PC)
-> • Paket Private bersifat milik pribadi selama masa aktif
-> • Akun seller, bergaransi penuh asal memenuhi S&K
-
-Untuk order, chat admin ya ✨`,
-
-  ".spotify": `🎵 *SPOTIFY*
-
-*Family Plan* (Full Garansi & Bisa Perpanjang)
-• Rp18.000 / 1 Bulan
-• Rp35.000 / 2 Bulan
-
-*Indplan* (Full Garansi)
-• Rp15.000 / 1 Bulan
-
-📌 *Note*
-> Akun seller, garansi penuh asal memenuhi S&K
-> Periode akun 1 bulan dihitung antara 27–30 hari dan sudah termasuk 1 bulan penuh
-> Tidak perlu login ke akun pribadi akun langsung aktif dari seller
-
-Untuk order, chat admin ya ✨`,
-
-  ".disney": `🍿 *DISNEY+ HOTSTAR*
-
-*Sharing*
-• 1 Bulan (10U) : Rp23.000
-• 1 Bulan (6U) : Rp27.000
-• 1 Bulan (4U) : Rp37.000
-• 1 Bulan (2U) : Rp53.000
-
-*Disney Private Plan Basic*
-• 1 Bulan : Rp85.000
-
-*Disney Private Plan Premium*
-• 1 Bulan : Rp145.000
-
-📌 *Noted*
-> Sharing hanya login 1 Device
-> Login Account by OTP hanya berlaku 1 kali
-> Bisa langsung otp, yang penting sabar karena suka delay
-> Fee nambah otp +3k
-
-Untuk order, chat admin ya ✨`,
-
-  // alias biar gampang (TETAP ADA)
-  ".capcutpro": "↪️ Ketik *.capcut* ya 😊",
-  ".disneyplus": "↪️ Ketik *.disney* ya 😊",
-  ".hotstar": "↪️ Ketik *.disney* ya 😊",
-
-  // ====== PRODUK BARU SESUAI OUTPUT KAMU ======
   ".netflix": `Netflix
 1P1U — Rp28.000 / bulan
 Semi Private — Rp35.000 / bulan
@@ -87,6 +28,26 @@ Ind Plan 1 Bulan — Rp18.000
 > • Tanya stok terlebih dahulu sebelum order
 > • Garansi login hanya berlaku 1 jam setelah akun diberikan`,
 
+  ".disney": `Disney+ Hotstar
+
+Sharing
+1 Bulan (10U) : Rp30.000
+1 Bulan (6U) : Rp34.000
+1 Bulan (4U) : Rp44.000
+1 Bulan (2U) : Rp60.000
+
+Disney Private Plan Basic
+1 Bulan : Rp90.000
+
+Disney Private Plan Premium
+1 Bulan : Rp150.000
+
+📌 Noted
+> Sharing hanya login 1 Device
+> Login Account by OTP hanya berlaku 1 kali
+> Bisa langsung otp, yang penting sabar karena suka delay
+> Fee nambah otp +3k`,
+
   ".loklok": `LOKLOK VIP
 
 SHARING ACCOUNT 3U (PLAN BASIC)
@@ -112,16 +73,30 @@ Mobile 1 bulan : Rp120.000
 
 📌 Noted
 > • Platinum → Film, series, dan sebagian olahraga (tanpa Premier League).
-> • Ultimate→ Semua konten Platinum + olahraga lengkap, termasuk Premier League.
+> • Ultimate → Semua konten Platinum + olahraga lengkap, termasuk Premier League.
 > • Tidak termasuk paket Express.`,
+
+  ".spotify": `Spotify
+
+Family Plan Full Garansi dan Bisa Perpanjang
+Rp22.000 / 1 Bulan
+Rp40.000 / 2 Bulan
+
+Indplan Full Garansi
+Rp25.000 / 1 Bulan
+
+📌 Note:
+> Akun seller, garansi penuh asal memenuhi S&K
+> Periode akun 1 bulan dihitung antara 27–30 hari dan sudah termasuk 1 bulan penuh
+> Tidak perlu login ke akun pribadi akun langsung aktif dari seller`,
 
   ".chatgpt": `Chat GPT
 
 ChatGpt Team (Private)
-Rp 35.000 / Bulan
+Rp35.000 / Bulan
 
 ChatGpt HEAD (Private)
-Rp 85.000 / Bulan
+Rp85.000 / Bulan
 
 > ✅ Unlimited Chat
 > ✅ Akses GPT Terbaru
@@ -137,7 +112,6 @@ Rp 85.000 / Bulan
 
 GEMINI HEAD
 Private , Bisa invite 5 Email
-
 1 Bulan — Rp50.000
 
 VIA INVITE
@@ -168,6 +142,21 @@ Owner / Head Plan
 * Diperlukan email pembeli untuk aktivasi akun
 * Garansi berlaku sesuai paket yang dipilih
 * Akun seller, bergaransi penuh asal memenuhi S&K`,
+
+  ".capcut": `Capcut Pro Full Garansi
+
+Sharing
+1 Bulan — Rp15.000
+
+Private
+30 Hari — Rp20.000
+35 Hari — Rp25.000
+
+📌 S&K PRODUK
+> • Periode akun 1 bulan dihitung antara 25–30 hari dan sudah termasuk 1 bulan penuh
+> • Support All Device (Android, iOS, PC)
+> • Paket Private bersifat milik pribadi selama masa aktif
+> • Akun seller, bergaransi penuh asal memenuhi S&K`,
 
   ".instagram": `SUNTIK SOSMED INSTAGRAM
 

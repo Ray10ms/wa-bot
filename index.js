@@ -62,6 +62,15 @@ berarti kamu *setuju dengan syarat di atas*
 
 ✨ Terima kasih sudah belanja di *${STORE_NAME}*!`;
 
+// === BARU (untuk .open / .close) ===
+const OPEN_TEXT = `✅ *TOKO DIBUKA* 🟢
+Silakan order ya kak 🙌
+Admin standby 💬`;
+
+const CLOSE_TEXT = `⛔ *TOKO DITUTUP* 🔴
+Toko sedang tutup sementara 🙏
+Silakan order saat jam operasional`;
+
 // ================== HELPERS ==================
 const normalize = (jid) => (jid || "").split("@")[0];
 
@@ -72,7 +81,7 @@ const getText = (m) =>
   m.message?.videoMessage?.caption ||
   "";
 
-// === BARU: auto-bold judul (baris pertama) untuk output detail produk ===
+// auto-bold judul (baris pertama) untuk output detail produk
 function boldTitle(text) {
   if (!text) return text;
 
@@ -81,7 +90,7 @@ function boldTitle(text) {
   const title = (lines[0] || "").trim();
   if (!title) return t;
 
-  // kalau judul sudah ada bold manual (pakai *...*), biarkan
+  // kalau judul sudah bold manual (pakai *...*), biarkan
   if (title.startsWith("*") && title.endsWith("*")) return t;
 
   lines[0] = `*${title}*`;
@@ -139,8 +148,8 @@ const pad = (n) => String(n).padStart(2, "0");
 
 function formatTanggal(d) {
   const bln = [
-    "Januari","Februari","Maret","April","Mei","Juni",
-    "Juli","Agustus","September","Oktober","November","Desember"
+    "Januari", "Februari", "Maret", "April", "Mei", "Juni",
+    "Juli", "Agustus", "September", "Oktober", "November", "Desember"
   ];
   return `${d.getDate()} ${bln[d.getMonth()]} ${d.getFullYear()}`;
 }
@@ -195,7 +204,7 @@ Terima kasih sudah bergabung di
 📦 Cek daftar produk dengan *.list*
 Jika ingin order, silakan chat admin ya 🙏
 
-Happy shopping & semoga betah 💖`;
+Happy shopping & semoga betah ✨`;
 
       await sock.sendMessage(groupJid, {
         text: welcomeText,
@@ -224,12 +233,94 @@ Happy shopping & semoga betah 💖`;
     // detail produk (public)
     if (PRODUCT_DETAILS[cmd]) {
       const raw = PRODUCT_DETAILS[cmd];
-      const formatted = boldTitle(raw); // <-- BARU: auto-bold judul
+      const formatted = boldTitle(raw);
       return sock.sendMessage(
         m.key.remoteJid,
         { text: formatted },
         { quoted: m }
       );
+    }
+
+    // =======================
+    // BARU: .open / .close
+    // =======================
+
+    // .open (admin-only, group only) => semua member bisa chat
+    if (cmd === ".open") {
+      const isGroup = m.key.remoteJid.endsWith("@g.us");
+      if (!isGroup) {
+        return sock.sendMessage(
+          m.key.remoteJid,
+          { text: "⚠️ Command ini hanya bisa digunakan di grup." },
+          { quoted: m }
+        );
+      }
+
+      const ok = await isAllowedAdmin(sock, m);
+      if (!ok) {
+        return sock.sendMessage(
+          m.key.remoteJid,
+          { text: "❌ Command khusus admin." },
+          { quoted: m }
+        );
+      }
+
+      try {
+        // not_announcement = semua member boleh chat
+        await sock.groupSettingUpdate(m.key.remoteJid, "not_announcement");
+
+        return sock.sendMessage(
+          m.key.remoteJid,
+          { text: OPEN_TEXT },
+          { quoted: m }
+        );
+      } catch (err) {
+        console.error("OPEN error:", err);
+        return sock.sendMessage(
+          m.key.remoteJid,
+          { text: "⚠️ Gagal membuka grup. Pastikan bot adalah admin grup." },
+          { quoted: m }
+        );
+      }
+    }
+
+    // .close (admin-only, group only) => hanya admin bisa chat
+    if (cmd === ".close") {
+      const isGroup = m.key.remoteJid.endsWith("@g.us");
+      if (!isGroup) {
+        return sock.sendMessage(
+          m.key.remoteJid,
+          { text: "⚠️ Command ini hanya bisa digunakan di grup." },
+          { quoted: m }
+        );
+      }
+
+      const ok = await isAllowedAdmin(sock, m);
+      if (!ok) {
+        return sock.sendMessage(
+          m.key.remoteJid,
+          { text: "❌ Command khusus admin." },
+          { quoted: m }
+        );
+      }
+
+      try {
+        // announcement = hanya admin yang boleh chat
+        await sock.groupSettingUpdate(m.key.remoteJid, "announcement");
+
+        return sock.sendMessage(
+          m.key.remoteJid,
+          { text: CLOSE_TEXT },
+          { quoted: m }
+        );
+      } catch (err) {
+        console.error("CLOSE error:", err);
+        return sock.sendMessage(
+          m.key.remoteJid,
+          { text: "⚠️ Gagal menutup grup. Pastikan bot adalah admin grup." },
+          { quoted: m }
+        );
+      }
     }
 
     // .pay (admin-only)
